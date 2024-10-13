@@ -1,0 +1,97 @@
+version: '3'
+
+services:
+  frontend:
+    build:
+      context: ./frontend/my-app
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3008:3008"
+    environment:
+      - PORT=3008
+      - REACT_APP_API_URL=http://localhost:3000
+    volumes:
+      - ./frontend/my-app:/app
+      - /app/node_modules
+    depends_on:
+      - api-gateway
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - DEVICE_SERVICE_URL=http://device-service:3002
+      - SENSOR_SERVICE_URL=http://sensor-service:3003
+      - LIGHTING_SERVICE_URL=http://lighting-service:3004
+      - SCHEDULING_SERVICE_URL=http://scheduling-service:3005
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3006
+      - JWT_SECRET=RhnXloat9uE8/tgbRPXjfrUTI1aUy1xZLs+rlZE3zX4=
+
+  auth-service:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/smart-home-lighting
+
+  device-service:
+    build:
+      context: ./services/device-management
+      dockerfile: Dockerfile
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/smart-home-lighting
+
+  sensor-service:
+    build:
+      context: ./services/sensor-data
+      dockerfile: Dockerfile
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/smart-home-lighting
+
+  lighting-service:
+    build:
+      context: ./services/lighting-control
+      dockerfile: Dockerfile
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/smart-home-lighting
+      - DEVICE_SERVICE_URL=http://device-service:3002
+      - SENSOR_SERVICE_URL=http://sensor-service:3003
+
+  scheduling-service:
+    build:
+      context: ./services/scheduling
+      dockerfile: Dockerfile
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/smart-home-lighting
+      - DEVICE_SERVICE_URL=http://device-service:3002
+
+  analytics-service:
+    build:
+      context: ./services/analytics
+      dockerfile: Dockerfile
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/smart-home-lighting
+      - DEVICE_SERVICE_URL=http://device-service:3002
+      - SENSOR_SERVICE_URL=http://sensor-service:3003
+
+  data-simulator:
+    build:
+      context: ./services/data-simulator
+      dockerfile: Dockerfile
+    environment:
+      - DEVICE_SERVICE_URL=http://device-service:3002
+      - SENSOR_SERVICE_URL=http://sensor-service:3003
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
